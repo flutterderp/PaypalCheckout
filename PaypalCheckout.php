@@ -221,7 +221,7 @@ class PaypalCheckout
 	 *
 	 * @link https://developer.paypal.com/docs/api/orders/v2/
 	 *
-	 * @param $amount     float
+	 * @param $amount     array
 	 * @param $refId      string
 	 * @param $return_url string
 	 * @param $cancel_url string
@@ -229,7 +229,7 @@ class PaypalCheckout
 	 *
 	 * @todo Possible caching of the token?
 	 */
-	function createOrder(float $amount, string $refId, string $return_url = '', string $cancel_url = '')
+	function createOrder(array $inputvars, string $refId, string $return_url = '', string $cancel_url = '')
 	{
 		$this->setEndpoint('/v2/checkout/orders');
 
@@ -243,16 +243,30 @@ class PaypalCheckout
 		// $header_opts[] = 'PayPal-Request-Id: ';
 		// $header_opts[] = '';
 
-		$post_opts['intent']                                                               = 'CAPTURE';
-		$post_opts['purchase_units']                                                       = array();
-		$post_opts['purchase_units'][0]['reference_id']                                       = filter_var($refId, FILTER_SANITIZE_SPECIAL_CHARS);
+		$post_opts['intent']                                                                  = 'CAPTURE';
+		// payer is “deprecated” but using customer doesn't seem to pass our info to the address fields?
+		$post_opts['payer']['name']['given_name']                                             = $inputvars['address']['first_name'];
+		$post_opts['payer']['name']['surname']                                                = $inputvars['address']['last_name'];
+		$post_opts['payer']['address']['address_line_1']                                      = $inputvars['address']['address_line_1'];
+		$post_opts['payer']['address']['address_line_2']                                      = $inputvars['address']['address_line_2'];
+		$post_opts['payer']['address']['admin_area_2']                                        = $inputvars['address']['admin_area_2'];
+		$post_opts['payer']['address']['admin_area_1']                                        = $inputvars['address']['admin_area_1'];
+		$post_opts['payer']['address']['postal_code']                                         = $inputvars['address']['postal_code'];
+		$post_opts['payer']['address']['country_code']                                        = $inputvars['address']['country_code'];
+		$post_opts['payer']['email_address']                                                  = $inputvars['address']['email_address'];
+		$post_opts['payer']['phone']['phone_type']                                            = 'MOBILE';
+		$post_opts['payer']['phone']['phone_number']['national_number']                       = preg_replace("/(\D)/", '', $inputvars['address']['phone_number']);
+		$post_opts['purchase_units']                                                          = array();
+		$post_opts['purchase_units'][0]['custom_id']                                          = filter_var($inputvars['custom_id'], FILTER_SANITIZE_SPECIAL_CHARS);
+		$post_opts['purchase_units'][0]['invoice_id']                                         = filter_var($inputvars['invoice_id'], FILTER_SANITIZE_SPECIAL_CHARS);
+		$post_opts['purchase_units'][0]['reference_id']                                       = filter_var($inputvars['reference_id'], FILTER_SANITIZE_SPECIAL_CHARS);
 		$post_opts['purchase_units'][0]['amount']                                             = array();
 		$post_opts['purchase_units'][0]['amount']['currency_code']                            = 'USD';
-		$post_opts['purchase_units'][0]['amount']['value']                                    = round($amount, 2);
+		$post_opts['purchase_units'][0]['amount']['value']                                    = round($inputvars['amount'], 2);
 		$post_opts['purchase_units'][0]['amount']['breakdown']                                = array();
 		$post_opts['purchase_units'][0]['amount']['breakdown']['item_total']                  = array();
 		$post_opts['purchase_units'][0]['amount']['breakdown']['item_total']['currency_code'] = 'USD';
-		$post_opts['purchase_units'][0]['amount']['breakdown']['item_total']['value']         = round($amount, 2);
+		$post_opts['purchase_units'][0]['amount']['breakdown']['item_total']['value']         = round($inputvars['amount'], 2);
 		$post_opts['purchase_units'][0]['application_context']                                = array();
 		$post_opts['purchase_units'][0]['application_context']['return_url']                  = $return_url;
 		$post_opts['purchase_units'][0]['application_context']['cancel_url']                  = $cancel_url;

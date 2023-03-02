@@ -15,9 +15,12 @@ $authorized  = $pp->authorise();
 
 if($authorized === true)
 {
-	$order = $pp->createOrder(100, 'test_ref_id1', 'https://example.com/return', 'https://example.com/cancel');
+	$phpinput = file_get_contents('php://input');
+	$postvars = json_decode($phpinput, true);
 
-	if(isset($order->debug_id)) : ?>
+	$order = $pp->createOrder($postvars, '', 'https://example.com/return', 'https://example.com/cancel');
+
+	/* if(isset($order->debug_id)) : ?>
 		<p>
 			<b>Name:</b> <?php echo $order->name; ?><br>
 			<b>Message:</b> <?php echo $order->message; ?><br>
@@ -32,7 +35,8 @@ if($authorized === true)
 			<b>Description:</b> <?php echo $detail->description; ?>
 			</p>
 		<?php endforeach; ?>
-	<?php endif;
+	<?php endif; */
 
 	echo json_encode($order);
+	// print_r($order);
 }

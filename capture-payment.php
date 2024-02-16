@@ -15,9 +15,12 @@ $authorized  = $pp->authorise();
 
 if($authorized === true)
 {
-	$capture = $pp->createOrder(100, 'test_ref_id1', 'https://example.com/return', 'https://example.com/cancel');
+	$phpinput = file_get_contents('php://input');
+	$postvars = json_decode($phpinput, true);
 
-	if(isset($capture->debug_id)) : ?>
+	$capture = $pp->capturePayment($postvars);
+
+	/* if(isset($capture->debug_id)) : ?>
 		<p>
 			<b>Name:</b> <?php echo $capture->name; ?><br>
 			<b>Message:</b> <?php echo $capture->message; ?><br>
@@ -26,13 +29,46 @@ if($authorized === true)
 
 		<?php foreach($capture->details as $detail) : ?>
 			<p>
-			<b>Field:</b> <?php echo $detail->field; ?><br>
-			<b>Location:</b> <?php echo $detail->location; ?><br>
+			<?php if(isset($detail->field)) : ?>
+				<b>Field:</b> <?php echo $detail->field; ?><br>
+			<?php endif; ?>
+
+			<?php if(isset($detail->location)) : ?>
+				<b>Location:</b> <?php echo $detail->location; ?><br>
+			<?php endif; ?>
+
 			<b>Issue:</b> <?php echo $detail->issue; ?><br>
 			<b>Description:</b> <?php echo $detail->description; ?>
 			</p>
 		<?php endforeach; ?>
-	<?php endif;
+	<?php endif; */
+
+	if(isset($capture->status) && $capture->status === 'COMPLETED')
+	{
+		// Process the payment
+		/**
+		 * $capture->id
+		 * $capture->status
+		 * $capture->purchase_units[$i]->payments->captures
+		 */
+		$order_info = array();
+
+		foreach($capture->purchase_units as $i => $unit)
+		{
+			array_walk($unit->payments->captures, function($v, $k) use (&$order_info, $i)
+			{
+				if($v->final_capture === true) {
+					$order_info['unit' . $i]['txn_id']       = $v->id;
+					$order_info['unit' . $i]['gross_amount'] = $v->seller_receivable_breakdown->gross_amount->value;
+					$order_info['unit' . $i]['paypal_fee']   = $v->seller_receivable_breakdown->paypal_fee->value;
+					$order_info['unit' . $i]['net_amount']   = $v->seller_receivable_breakdown->net_amount->value;
+				}
+			});
+		}
+
+		// error_log(json_encode($order_info) . PHP_EOL, 3, __DIR__ . '/debug.log');
+	}
 
 	echo json_encode($capture);
+	// print_r($capture);
 }

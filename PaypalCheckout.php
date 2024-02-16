@@ -219,7 +219,7 @@ class PaypalCheckout
 	 * An order represents a payment between two or more parties. Use the Orders API to create, update,
 	 * retrieve, authorize, and capture orders.
 	 *
-	 * @link https://developer.paypal.com/docs/api/orders/v2/
+	 * @link https://developer.paypal.com/docs/api/orders/v2/#orders_create
 	 *
 	 * @param $amount     array
 	 * @param $refId      string
@@ -233,7 +233,6 @@ class PaypalCheckout
 	{
 		$this->setEndpoint('/v2/checkout/orders');
 
-		$auth_string = base64_encode($this->client_id . ':' . $this->client_secret);
 		$header_opts = array();
 		$post_opts   = array();
 
@@ -270,6 +269,44 @@ class PaypalCheckout
 		$post_opts['purchase_units'][0]['application_context']                                = array();
 		$post_opts['purchase_units'][0]['application_context']['return_url']                  = $return_url;
 		$post_opts['purchase_units'][0]['application_context']['cancel_url']                  = $cancel_url;
+
+		$this->setOptions($header_opts, json_encode($post_opts), 'POST');
+
+		$order = $this->sendRequest();
+
+		return $order;
+	}
+
+	/**
+	 * An order represents a payment between two or more parties. Use the Orders API to create, update,
+	 * retrieve, authorize, and capture orders.
+	 *
+	 * @link https://developer.paypal.com/docs/api/orders/v2/#orders_capture
+	 *
+	 * @param $inputvars  array
+	 * @param $return_url string
+	 * @param $cancel_url string
+	 * @param $order
+	 *
+	 * @todo Possible caching of the token?
+	 */
+	function capturePayment(array $inputvars)
+	{
+		$orderID = preg_replace("/\W/", '', $inputvars['orderID']);
+
+		$this->setEndpoint('/v2/checkout/orders/' . $orderID . '/capture');
+
+		$header_opts = array();
+		$post_opts   = array();
+
+		$header_opts[] = 'Authorization: Bearer ' . $this->token;
+		$header_opts[] = 'Content-Type: application/json';
+		$header_opts[] = 'Prefer: return=representation';
+		// $header_opts[] = 'PayPal-Request-Id: ';
+		// $header_opts[] = '';
+
+		// $post_opts['orderID']       = $orderID;
+		$post_opts['paymentSource'] = $inputvars['paymentSource'];
 
 		$this->setOptions($header_opts, json_encode($post_opts), 'POST');
 

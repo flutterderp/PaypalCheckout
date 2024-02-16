@@ -29,8 +29,14 @@ if($authorized === true)
 
 		<?php foreach($order->details as $detail) : ?>
 			<p>
-			<b>Field:</b> <?php echo $detail->field; ?><br>
-			<b>Location:</b> <?php echo $detail->location; ?><br>
+			<?php if(isset($detail->field)) : ?>
+				<b>Field:</b> <?php echo $detail->field; ?><br>
+			<?php endif; ?>
+
+			<?php if(isset($detail->location)) : ?>
+				<b>Location:</b> <?php echo $detail->location; ?><br>
+			<?php endif; ?>
+
 			<b>Issue:</b> <?php echo $detail->issue; ?><br>
 			<b>Description:</b> <?php echo $detail->description; ?>
 			</p>

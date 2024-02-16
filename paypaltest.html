@@ -64,12 +64,14 @@
         // Order is created on the server and the order id is returned
         // Finalize the transaction on the server after payer approval
         onApprove: function(data, actions) {
+          // console.log(data);
           // return fetch('/demo/checkout/api/paypal/order/' + data.orderID + '/capture/', {
           return fetch('./capture-payment.php', {
               method: 'post',
               header: {'content-type': 'application/json'},
               body: JSON.stringify({
-                orderID: data.orderID
+                orderID: data.orderID,
+                paymentSource: data.paymentSource
               })
           }).then(function(response) {
               return response.json();
@@ -101,9 +103,10 @@
             alert('Transaction '+ transaction.status + ': ' + transaction.id + '\n\nSee console for all available details');
 
             // Replace the above to show a success message within this page, e.g.
-            // const element = document.getElementById('paypal-button-container');
-            // element.innerHTML = '';
-            // element.innerHTML = '<h3>Thank you for your payment!</h3>';
+            const element = document.getElementById('paypal-button-container');
+            element.innerHTML = '';
+            element.innerHTML = '<h3>Thank you for your payment!</h3>';
+            // element.innerHTML = '<p>' + JSON.stringify(orderData, null, 2) + '</p>';
             // Or go to another URL:  actions.redirect('thank_you.html');
           });
         }
